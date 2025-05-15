@@ -24,20 +24,8 @@ def planning(date: str):
 
     data = response.json()
 
-    simplified = []
-    for rdv in data:
-        simplified.append({
-            "id": rdv.get("id"),
-            "client": rdv.get("clientNom") or rdv.get("client", {}).get("nom"),
-            "adresse": rdv.get("adresse") or rdv.get("client", {}).get("adresse"),
-            "ville": rdv.get("ville") or rdv.get("client", {}).get("ville"),
-            "technicien": rdv.get("intervenantNom") or rdv.get("intervenant", {}).get("nom"),
-            "heure_debut": rdv.get("heureDebut"),
-            "heure_fin": rdv.get("heureFin"),
-            "objet": rdv.get("titre") or rdv.get("typeIntervention"),
-            "statut": rdv.get("statut"),
-            "temps_prevu": rdv.get("tempsPrevu"),
-            "type": rdv.get("typeIntervention")
-        })
-
-    return simplified
+    # ➤ retourne uniquement les 1er élément brut pour analyse
+    if isinstance(data, list) and data:
+        return data[0]  # 🔍 Ceci nous montre 1 RDV complet (structure brute)
+    else:
+        return {"message": "Aucun rendez-vous trouvé ou format inattendu"}
