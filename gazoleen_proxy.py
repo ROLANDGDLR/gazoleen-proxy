@@ -30,8 +30,7 @@ def parse_duree(duree_str):
     return heures * 60 + minutes
 
 def get_max_day_minutes():
-    # Matin : 8h30-13h30 (5h) = 300min / AM : 14h-18h30 (4h30) = 270min
-    return 300 + 270
+    return 300 + 270  # 8h30-13h30 + 14h-18h30
 
 @app.get("/planning")
 def planning(date: str):
@@ -97,3 +96,54 @@ def planning(date: str):
             } for tech, charge in charge_par_tech.items()
         ]
     }
+
+@app.get("/resume")
+def resume(date: str):
+    token = get_token()
+    url = f"https://ramonetou.gazoleen.com/ws/meetings/{date}?t={token}-{REFADMIN}"
+    response = requests.get(url)
+
+    if response.status_code != 200:
+        return {"error": "Erreur lors de l'appel à Gazoleen", "status_code": response.status_code}
+
+    try:
+        data = response.json()
+    except Exception as e:
+        return {"error": "Réponse JSON invalide", "details": str(e)}
+
+    resumes = defaultdict(lambda: {"nb_rdv": 0, "temps_planifie": 0, "villes": set()})
+
+    for bloc in data:
+        tech = bloc.get("name")
+        if not tech:
+            continue
+        for rdv in bloc.get("meetings", []):
+            client = rdv.get("client", {})
+            services = rdv.get("services") or [{}]
+            service = services[0] if isinstance(services, list) else {}
+
+            duree_str = service.get("duration", "0h00")
+            duree_min = parse_duree(duree_str)
+
+            adresse = client.get("address", "")
+            ville = adresse.split(",")[0].strip() if "," in adresse else None
+
+            resumes[tech]["nb_rdv"] += 1
+            resumes[tech]["temps_planifie"] += duree_min
+            if ville:
+                resumes[tech]["villes"].add(ville)
+
+    result = []
+    for tech, infos in resumes.items():
+        minutes = infos["temps_planifie"]
+        heures = minutes // 60
+        rest = minutes % 60
+        result.append({
+            "technicien": tech,
+            "nb_rdv": infos["nb_rdv"],
+            "temps_planifie_min": minutes,
+            "temps_planifie_h": f"{heures}h{rest:02}",
+            "villes": sorted(infos["villes"])
+        })
+
+    return result
