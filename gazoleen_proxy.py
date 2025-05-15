@@ -51,11 +51,15 @@ def planning(date: str):
         technicien = bloc.get("name")
         date_rdv = bloc.get("date")
         total_minutes = 0
+
         for meeting in bloc.get("meetings", []):
             client = meeting.get("client", {})
-            service = meeting.get("services", [{}])[0]
+            services = meeting.get("services")
+            if not services or not isinstance(services, list):
+                services = [{}]
+            service = services[0]
 
-            duree_txt = service.get("duration")
+            duree_txt = service.get("duration", "0h00")
             duree_min = parse_duree(duree_txt)
             total_minutes += duree_min
 
