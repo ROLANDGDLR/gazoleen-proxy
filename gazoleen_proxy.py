@@ -2,6 +2,8 @@ from fastapi import FastAPI
 import hashlib
 import datetime
 import requests
+import re
+from collections import defaultdict
 
 app = FastAPI()
 
@@ -59,7 +61,7 @@ def planning(date: str):
         date_rdv = bloc.get("date")
         total_minutes = 0
 
-        for meeting in bloc.get("meetings", []):
+        for meeting in bloc.get("meetings", []) or []:
             client = meeting.get("client", {})
             services = meeting.get("services")
             if not services or not isinstance(services, list):
@@ -111,13 +113,16 @@ def resume(date: str):
     except Exception as e:
         return {"error": "Réponse JSON invalide", "details": str(e)}
 
+    if not isinstance(data, list):
+        return {"error": "Format inattendu de la réponse Gazoleen"}
+
     resumes = defaultdict(lambda: {"nb_rdv": 0, "temps_planifie": 0, "villes": set()})
 
     for bloc in data:
         tech = bloc.get("name")
         if not tech:
             continue
-        for rdv in bloc.get("meetings", []):
+        for rdv in bloc.get("meetings") or []:
             client = rdv.get("client", {})
             services = rdv.get("services") or [{}]
             service = services[0] if isinstance(services, list) else {}
