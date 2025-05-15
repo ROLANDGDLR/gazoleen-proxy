@@ -42,4 +42,5 @@ def planning(date: str):
         for rdv in full_data
     ]
 
-    return simplified
+   return full_data
+
