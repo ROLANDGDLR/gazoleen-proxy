@@ -23,9 +23,24 @@ def planning(date: str):
         return {"error": "Erreur lors de l'appel à Gazoleen", "status_code": response.status_code}
 
     data = response.json()
+    result = []
 
-    # ➤ retourne uniquement les 1er élément brut pour analyse
-    if isinstance(data, list) and data:
-        return data[0]  # 🔍 Ceci nous montre 1 RDV complet (structure brute)
-    else:
-        return {"message": "Aucun rendez-vous trouvé ou format inattendu"}
+    for bloc in data:
+        technicien = bloc.get("name")
+        date_rdv = bloc.get("date")
+        for meeting in bloc.get("meetings", []):
+            client = meeting.get("client", {})
+            service = meeting.get("services", [{}])[0]
+
+            result.append({
+                "technicien": technicien,
+                "date": date_rdv,
+                "heure": meeting.get("time"),
+                "client": client.get("name"),
+                "adresse": client.get("address"),
+                "telephone": client.get("phone1"),
+                "objet": service.get("label"),
+                "duree": service.get("duration")
+            })
+
+    return result
