@@ -42,7 +42,15 @@ def planning(date: str):
     if response.status_code != 200:
         return {"error": "Erreur lors de l'appel à Gazoleen", "status_code": response.status_code}
 
-    data = response.json()
+    try:
+        data = response.json()
+    except Exception as e:
+        return {
+            "error": "Réponse JSON invalide depuis Gazoleen",
+            "status_code": response.status_code,
+            "details": str(e)
+        }
+
     result = []
     charge_par_tech = {}
     max_day_minutes = get_max_day_minutes()
